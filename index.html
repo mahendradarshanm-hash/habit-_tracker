@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Habit tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef1f5;--surface:#ffffff;--ink:#17202e;--muted:#6a7488;--line:#dde2ea;
+  --accent:#0f8f7d;--accent-soft:#d5efea;--warm:#e39a2d;--empty:#e7ebf1;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#121821;--surface:#1a222e;--ink:#e8edf5;--muted:#93a0b5;--line:#2a3443;--accent:#2fc4ad;--accent-soft:#1c3a3a;--warm:#f0b04f;--empty:#27313f}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45}
+.wrap{max-width:980px;margin:0 auto;padding:28px 18px 60px}
+h1{font-size:2.1rem;font-weight:800;letter-spacing:-.02em;margin:0}
+.sub{color:var(--muted);margin:4px 0 0}
+header{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:flex-end;margin-bottom:22px}
+.add{display:flex;gap:8px}
+input[type=text]{font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-width:220px}
+button{font:inherit;cursor:pointer;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:10px 16px;font-weight:600}
+.tabs{display:inline-flex;background:var(--empty);border-radius:10px;padding:4px;margin-bottom:20px}
+.tabs button{background:none;border:0;padding:8px 20px;border-radius:7px;font-weight:600;color:var(--muted)}
+.tabs button[aria-selected=true]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:18px}
+.panel h2{font-size:1.05rem;margin:0 0 14px;font-weight:600}
+.nav{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.nav strong{font-size:1.25rem;min-width:170px;text-align:center}
+.nav button{background:var(--empty);border:0;border-radius:8px;width:36px;height:36px;font-size:1.1rem}
+.nav button:disabled{opacity:.35;cursor:default}
+.progress{height:10px;background:var(--empty);border-radius:99px;overflow:hidden;margin:8px 0 18px}
+.progress i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.today-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--line)}
+.today-row:first-of-type{border-top:0}
+.check{width:38px;height:38px;border-radius:50%;border:2px solid var(--line);background:none;flex:none;display:grid;place-items:center;color:#fff;font-size:1.15rem;line-height:1}
+.check[aria-pressed=true]{background:var(--accent);border-color:var(--accent)}
+.today-row .name{flex:1;font-weight:600}
+.today-row .meta{color:var(--muted);font-size:.9rem}
+.link{background:none;border:0;color:var(--muted);text-decoration:underline;font-size:.85rem}
+.scroll{overflow-x:auto}
+table{border-collapse:separate;border-spacing:4px;width:100%}
+th{font-weight:400;color:var(--muted);font-size:.78rem;text-align:center;padding:0}
+th.hab,td.hab{text-align:left;position:sticky;left:0;background:var(--surface);padding-right:10px;min-width:120px;max-width:170px;font-size:.95rem;font-weight:600;color:var(--ink);z-index:1}
+th.now{color:var(--accent);font-weight:800}
+td{text-align:center;padding:0}
+.cell{width:100%;min-width:26px;height:30px;border:0;border-radius:6px;background:var(--empty)}
+.week .cell{height:40px;min-width:40px}
+.cell[aria-pressed=true]{background:var(--accent)}
+.cell:disabled{opacity:.35;cursor:default}
+.cell.today{box-shadow:0 0 0 2px var(--warm)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.stat b{display:block;font-size:1.9rem;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.stat span{color:var(--muted);font-size:.88rem}
+.hrow{display:grid;grid-template-columns:minmax(100px,170px) 1fr auto;gap:14px;align-items:center;padding:8px 0}
+.hrow .track{height:12px;background:var(--empty);border-radius:99px;overflow:hidden}
+.hrow .track i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.hrow small{color:var(--muted);white-space:nowrap}
+.chart{display:flex;align-items:flex-end;gap:4px;height:140px;padding-top:6px}
+.bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;min-width:0}
+.bar i{display:block;width:100%;background:var(--accent);border-radius:4px 4px 0 0;min-height:3px;opacity:.9}
+.bar i.zero{background:var(--empty);opacity:1}
+.bar.today i{background:var(--warm)}
+.bar span{font-size:.68rem;color:var(--muted);margin-top:4px}
+.empty{color:var(--muted);text-align:center;padding:30px 10px}
+@media (max-width:560px){h1{font-size:1.7rem}.add,input[type=text]{width:100%}.hrow{grid-template-columns:1fr auto}.hrow .track{grid-column:1/-1;order:3}}
+@media (prefers-reduced-motion:reduce){.progress i{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Habit tracker</h1>
+      <p class="sub" id="dateline"></p>
+    </div>
+    <form class="add" id="addForm">
+      <input type="text" id="newHabit" placeholder="New habit, e.g. Walk 30 minutes" maxlength="60" aria-label="New habit name">
+      <button class="btn" type="submit">Add habit</button>
+    </form>
+  </header>
+  <div class="tabs" role="tablist" id="tabs">
+    <button role="tab" data-view="today">Today</button>
+    <button role="tab" data-view="week">Week</button>
+    <button role="tab" data-view="month">Month</button>
+  </div>
+  <main id="app"></main>
+</div>
+
+<script>
+const KEY = 'habit-tracker-v1';
+let state = { habits: [], done: {} };
+let loaded = false;
+try { const s = localStorage.getItem(KEY); if (s) { state = JSON.parse(s); loaded = true; } } catch (e) {}
+if (!loaded) {
+  state.habits = [
+    { id: 'h1', name: 'Drink 2 litres of water' },
+    { id: 'h2', name: 'Read for 20 minutes' },
+    { id: 'h3', name: 'Exercise' }
+  ];
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+const pad = n => String(n).padStart(2, '0');
+const fmt = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (s, n) => { const x = parse(s); x.setDate(x.getDate() + n); return fmt(x); };
+const today = () => fmt(new Date());
+const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const short = (s, o) => parse(s).toLocaleDateString('en-US', o);
+const WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+function mondayOf(s) { const d = parse(s); const k = (d.getDay() + 6) % 7; return addDays(s, -k); }
+function weekDays(ws) { return Array.from({ length: 7 }, (_, i) => addDays(ws, i)); }
+function monthDays(ms) {
+  const d = parse(ms), out = [];
+  const n = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  for (let i = 1; i <= n; i++) out.push(d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(i));
+  return out;
+}
+const monthStart = s => s.slice(0, 8) + '01';
+const shiftMonth = (ms, n) => { const d = parse(ms); return fmt(new Date(d.getFullYear(), d.getMonth() + n, 1)); };
+
+let view = 'today';
+let weekStart = mondayOf(today());
+let monthCur = monthStart(today());
+
+const isDone = (id, d) => !!(state.done[id] && state.done[id][d]);
+function toggle(id, d) {
+  if (d > today()) return;
+  state.done[id] = state.done[id] || {};
+  if (state.done[id][d]) delete state.done[id][d]; else state.done[id][d] = 1;
+  save();
+}
+function streaks(id) {
+  const ds = Object.keys(state.done[id] || {}).sort();
+  let best = 0, run = 0, prev = null;
+  for (const d of ds) { run = prev && addDays(prev, 1) === d ? run + 1 : 1; best = Math.max(best, run); prev = d; }
+  let cur = 0, d = today();
+  if (!isDone(id, d)) d = addDays(d, -1);
+  while (isDone(id, d)) { cur++; d = addDays(d, -1); }
+  return { cur, best };
+}
+
+function stats(days) {
+  const t = today(), H = state.habits;
+  const past = days.filter(d => d <= t);
+  const per = H.map(h => {
+    const n = past.filter(d => isDone(h.id, d)).length;
+    return { h, n, pct: past.length ? Math.round(n / past.length * 100) : 0 };
+  });
+  const perDay = days.map(d => ({ d, n: H.filter(h => isDone(h.id, d)).length }));
+  const total = per.reduce((a, p) => a + p.n, 0);
+  const pct = past.length && H.length ? Math.round(total / (past.length * H.length) * 100) : 0;
+  const perfect = perDay.filter(x => x.d <= t && H.length && x.n === H.length).length;
+  const best = perDay.reduce((a, x) => x.n > a.n ? x : a, { n: 0, d: null });
+  return { per, perDay, total, pct, perfect, best, elapsed: past.length };
+}
+
+/* ---------- renderers ---------- */
+function todayView() {
+  const t = today(), H = state.habits;
+  const n = H.filter(h => isDone(h.id, t)).length;
+  const pct = H.length ? Math.round(n / H.length * 100) : 0;
+  if (!H.length) return '<div class="panel empty">No habits yet. Add your first habit above to start tracking.</div>';
+  return `<section class="panel">
+    <h2>${n} of ${H.length} done today (${pct}%)</h2>
+    <div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
+    ${H.map(h => {
+      const on = isDone(h.id, t), s = streaks(h.id);
+      return `<div class="today-row">
+        <button class="check" data-h="${h.id}" data-d="${t}" aria-pressed="${on}" aria-label="Mark ${esc(h.name)} as done">${on ? '&#10003;' : ''}</button>
+        <div class="name">${esc(h.name)}<div class="meta">${s.cur ? s.cur + '-day streak' : 'No streak yet'}, best ${s.best} ${s.best === 1 ? 'day' : 'days'}</div></div>
+        <button class="link" data-del="${h.id}">Remove</button>
+      </div>`;
+    }).join('')}
+  </section>`;
+}
+
+function grid(days, kind) {
+  const t = today();
+  const head = days.map(d => kind === 'week'
+    ? `<th class="${d === t ? 'now' : ''}">${WD[(parse(d).getDay() + 6) % 7]}<br>${parse(d).getDate()}</th>`
+    : `<th class="${d === t ? 'now' : ''}">${parse(d).getDate()}</th>`).join('');
+  const rows = state.habits.map(h => `<tr><td class="hab">${esc(h.name)}</td>${days.map(d =>
+    `<td><button class="cell ${d === t ? 'today' : ''}" data-h="${h.id}" data-d="${d}" aria-pressed="${isDone(h.id, d)}" ${d > t ? 'disabled' : ''} aria-label="${esc(h.name)} on ${short(d, { month: 'short', day: 'numeric' })}"></button></td>`).join('')}</tr>`).join('');
+  return `<div class="scroll ${kind}"><table><thead><tr><th class="hab"></th>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function summary(s, unit) {
+  return `<div class="stats">
+    <div class="stat"><b>${s.pct}%</b><span>Completion this ${unit}</span></div>
+    <div class="stat"><b>${s.total}</b><span>Check-ins logged</span></div>
+    <div class="stat"><b>${s.perfect}</b><span>${s.perfect === 1 ? 'Day' : 'Days'} with every habit done</span></div>
+    <div class="stat"><b>${s.best.n ? short(s.best.d, { month: 'short', day: 'numeric' }) : 'None yet'}</b><span>Best day${s.best.n ? ' (' + s.best.n + ' habits)' : ''}</span></div>
+  </div>`;
+}
+
+function perHabit(s, label) {
+  return `<section class="panel"><h2>By habit ${label}</h2>${s.per.map(p => {
+    const st = streaks(p.h.id);
+    return `<div class="hrow"><span>${esc(p.h.name)}</span><div class="track"><i style="width:${p.pct}%"></i></div><small>${p.n} of ${s.elapsed} days (${p.pct}%), best streak ${st.best}</small></div>`;
+  }).join('')}</section>`;
+}
+
+function chart(s, kind) {
+  const H = state.habits.length || 1, t = today();
+  return `<section class="panel"><h2>Habits completed per day</h2><div class="chart">${s.perDay.map(x => {
+    const h = Math.round(x.n / H * 100);
+    const lab = kind === 'week' ? WD[(parse(x.d).getDay() + 6) % 7] : parse(x.d).getDate();
+    return `<div class="bar ${x.d === t ? 'today' : ''}" title="${short(x.d, { month: 'short', day: 'numeric' })}: ${x.n} of ${state.habits.length}"><i class="${x.n ? '' : 'zero'}" style="height:${x.n ? Math.max(h, 4) : 3}%"></i><span>${(kind === 'month' && x.d.slice(8) % 2 === 0 && days_len() > 20) ? '' : lab}</span></div>`;
+  }).join('')}</div></section>`;
+}
+const days_len = () => 31;
+
+function weekView() {
+  const days = weekDays(weekStart), s = stats(days);
+  const last = days[6];
+  const label = short(days[0], { month: 'short', day: 'numeric' }) + ' to ' + short(last, { month: 'short', day: 'numeric', year: 'numeric' });
+  if (!state.habits.length) return '<div class="panel empty">Add a habit to see weekly stats.</div>';
+  return `<div class="nav"><button data-nav="-1" aria-label="Previous week">&#8249;</button><strong>${label}</strong><button data-nav="1" aria-label="Next week" ${weekStart >= mondayOf(today()) ? 'disabled' : ''}>&#8250;</button></div>
+  ${summary(s, 'week')}
+  <section class="panel">${grid(days, 'week')}</section>
+  ${perHabit(s, 'this week')}${chart(s, 'week')}`;
+}
+
+function monthView() {
+  const days = monthDays(monthCur), s = stats(days);
+  const label = short(monthCur, { month: 'long', year: 'numeric' });
+  if (!state.habits.length) return '<div class="panel empty">Add a habit to see monthly stats.</div>';
+  return `<div class="nav"><button data-nav="-1" aria-label="Previous month">&#8249;</button><strong>${label}</strong><button data-nav="1" aria-label="Next month" ${monthCur >= monthStart(today()) ? 'disabled' : ''}>&#8250;</button></div>
+  ${summary(s, 'month')}
+  <section class="panel">${grid(days, 'month')}</section>
+  ${perHabit(s, 'this month')}${chart(s, 'month')}`;
+}
+
+function render() {
+  document.getElementById('dateline').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.view === view));
+  document.getElementById('app').innerHTML = view === 'today' ? todayView() : view === 'week' ? weekView() : monthView();
+}
+
+/* ---------- events ---------- */
+document.getElementById('tabs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  view = b.dataset.view; render();
+});
+document.getElementById('app').addEventListener('click', e => {
+  const c = e.target.closest('[data-h]');
+  if (c) { toggle(c.dataset.h, c.dataset.d); render(); return; }
+  const n = e.target.closest('[data-nav]');
+  if (n) {
+    const k = Number(n.dataset.nav);
+    if (view === 'week') weekStart = addDays(weekStart, 7 * k); else monthCur = shiftMonth(monthCur, k);
+    render(); return;
+  }
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    const h = state.habits.find(x => x.id === del.dataset.del);
+    if (h && confirm('Remove “' + h.name + '” and its history?')) {
+      state.habits = state.habits.filter(x => x.id !== h.id);
+      delete state.done[h.id]; save(); render();
+    }
+  }
+});
+document.getElementById('addForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const inp = document.getElementById('newHabit'), name = inp.value.trim();
+  if (!name) return;
+  state.habits.push({ id: 'h' + Date.now().toString(36), name });
+  inp.value = ''; save(); render();
+});
+
+save(); render();
+</script>
+</body>
+</html>
